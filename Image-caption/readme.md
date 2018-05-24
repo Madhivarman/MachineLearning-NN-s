@@ -30,4 +30,4 @@ To run the Script
 
 In this method, we going to merge two neuralnetwork as a one and produce caption. The final layer called **Decoder** which both feature extractor and sequence processor output a fixed length of the vector. They are merged together and preprocessed by **Dense layer** to make final predictions
 
-**NOTE:I trained the network with Nvidia GTX 1050 GPU, 16gigs RAM took a hour to train a model. If you train this model on CPU it could take couple hours to train the  whole network**
+**NOTE:** I trained the network with Nvidia GTX 1050 GPU, 16gigs RAM took a hour to train a model. If you train this model on CPU it could take couple hours to train the  whole network
