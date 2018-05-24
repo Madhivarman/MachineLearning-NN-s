@@ -1,6 +1,6 @@
 ### Image Caption Using Neural Network
 
-** Image dataset** : Flickr8k Image dataset
+**Image dataset** : Flickr8k Image dataset
 
 Download the dataset and to run the Program do the following
 
