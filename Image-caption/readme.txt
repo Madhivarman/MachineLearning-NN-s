@@ -4,7 +4,7 @@ Image dataset: Flickr8k Image dataset
 
 Download the dataset and to run the Program do the following
 
->python dataset.py
+> python dataset.py
 
 In the above file we used Keras Pre-trained VGG16() model for getting image features. In that we removed last layer called as Softmax layers which is used for classification purpose. We don't need any class types to this problem.
 
