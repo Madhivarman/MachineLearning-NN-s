@@ -263,5 +263,7 @@ def main():
 	print("Softmax method took {} minutes to run 50000 iterations".format((softmax_end_time - softmax_start_time).total_seconds()))
 
 
+# Whole program took 13 minutes to run 5000 iterations in GPU (GTX 1050). In CPU it would take hours to complete the iterations.
 if __name__ == '__main__':
 	main()
+	
