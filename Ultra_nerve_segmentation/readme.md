@@ -12,5 +12,11 @@ identify **Barchial Plexus** nerve in ultrasound images. To know more about Barc
 - Matplotlib
 
 **Environment**
+
 I trained this model on  Windows 10, Nvidia GTX 1050 GPU. 
 
+To run this project download this dataset and clone this git repository.
+
+> python data_preprocessing.py
+
+Run the above file  to convert the images into trainable format.
