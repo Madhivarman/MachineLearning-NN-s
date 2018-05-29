@@ -1,159 +1,207 @@
 #import necessary libraries
 import numpy as np 
-import keras
-from keras.models import Model
-from keras.layers import Input, concatenate, Conv2D, MaxPooling2D, Conv2DTranspose, Dropout
-from keras.optimizers import Adam
+from pickle import load 
+from keras.preprocessing.text import Tokenizer
+from keras.preprocessing.sequence import pad_sequences
+from keras.utils import to_categorical,plot_model
+from keras.models import Model 
+from keras.layers import Input,Dense,LSTM,Embedding,Dropout
+from keras.layers.merge import add
 from keras.callbacks import ModelCheckpoint
-from keras import backend as K
 
-import matplotlib.pyplot as plt 
-#global definition
-img_row = 50
-img_col = 50
-smooth = 1
+"""
+	we gonna merge RNN and image to the Fully Functional
+
+	Photo Extractor: 16-layer VGG model pre-trained on Imagenet dataset.
+Extracted features from the image is treated as input.
+	
+	Sequence Processor: Word Embedding layer for handling the  text input, followed by
+Long Short-Term Memory(LSTM) RNN
+	
+	Decoder: Both the feature extractor and decoder output a fixed-length vector.These are
+merged together and processed by a Dense layer to make final predictions
+"""	
+
+def load_dataset(filename):
+	docs = open(filename).read() #read the file
+	data = list() #create a list
+
+	for line in docs.split('\n'):
+		#skip empty lines
+		if len(line) < 1:
+			continue
+
+		#get image identifier
+		identifier = line.split('.')[0]
+		data.append(identifier)
+
+	return set(data) #remove duplicates
+
+def load_description(clean_description,train):
+	docs = open(clean_description).read()
+	descr = dict()
+
+	for lines in docs.split('\n'):
+		#split the line by white space
+		desc = lines.split()
+		#split_id from description
+		image_id,image_description = desc[0],desc[1:]
+		#remove images not in the dataset
+		if image_id in train:
+			#create list
+			if image_id not in descr:
+				descr[image_id] = list()
+
+			#wrap decriptions in tokens
+			description = 'startseq'+' '.join(image_description)+'endseq'
+			#store
+			descr[image_id].append(description)
+
+	return descr
+
+def load_photo_features(features,dataset):
+	#load all features
+	all_features = load(open(features,'rb'))
+	#filter features
+	features = {k: all_features[k] for k in dataset}
+
+	return features
+
+def to_lines(descriptions):
+	all_desc = list()
+
+	for key in descriptions.keys():
+		[all_desc.append(d) for d in descriptions[key]]
+
+	return all_desc
 
 
-def create_conv_layer(f,stride,activationfn,padding,prevlayer,dropout):
+def prepare_tokenizer(tokenize_features,dataset):
 
-	conv = Conv2D(f,stride,activation=activationfn,padding=padding)(prevlayer)
-	conv = Dropout(dropout)(conv)
-	conv = Conv2D(f,stride,activation=activationfn,padding=padding)(conv)
+	lines = to_lines(tokenize_features)
+	tokenizer = Tokenizer()
+	tokenizer.fit_on_texts(lines)
 
-	return conv
-
-def maxpooling_fn(prevlayer):
-
-	return MaxPooling2D(pool_size=(2,2))(prevlayer)
-
-def concatenate_fn(f,kernal,stride,padding,src,dest):
-
-	return concatenate([Conv2DTranspose(f,kernal,strides=stride,padding=padding)(src),dest],axis=3)
-
-def dice_coef(y_true,y_pred):
-
-	y_true_f = K.flatten(y_true)
-	y_pred_f = K.flatten(y_pred)
-
-	intersection = K.sum(y_true_f * y_pred_f)
-
-	return (2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
-
-def dice_coef_loss(y_true,y_pred):
-
-	return -dice_coef(y_true,y_pred)
+	return tokenizer
 
 
-def getNetwork():
-
-	inputs = Input((img_row,img_col,1))
-
-	conv1 = create_conv_layer(32,(3,3),'relu','same',inputs,0.2)
-	pool1 = maxpooling_fn(conv1)
-
-	conv2 = create_conv_layer(64,(3,3),'relu','same',pool1,0.2)
-	pool2 = maxpooling_fn(conv2)
+def find_maximum_length(descriptions):
+	lines = to_lines(descriptions)
+	return max(len(d.split()) for d in lines)
 
 
-	conv3 = create_conv_layer(128,(3,3),'relu','same',pool2,0.3)
-	pool3 = maxpooling_fn(conv3)
+def create_sequences(tokenizer,maximum_length,train_descr,train_feat,vocab_size):
+	x1,x2,y = list(),list(),list()
+	#walk through each identifier
+	for key,desc_list in train_descr.items():
+		#walk through each description
+		for desc in desc_list:
+			#convert text to  word
+			seq = tokenizer.texts_to_sequences([desc])[0]
+			#split one sequence into multiple X,y pairs
+			for i in range(1,len(seq)):
+				#split into input and output pair
+				in_seq,out_seq = seq[:i],seq[i]
+				#pad input sequence
+				in_seq = pad_sequences([in_seq],maxlen=maximum_length)[0]
+				#encode output sequence
+				out_seq = to_categorical([out_seq],num_classes = vocab_size)[0]
+				#store
+				x1.append(train_feat[key][0])
+				x2.append(in_seq)
+				y.append(out_seq)
 
-	conv4 = create_conv_layer(256,(3,3),'relu','same',pool3,0.3)
-	pool4 = maxpooling_fn(conv4)
+	return np.array(x1),np.array(x2),np.array(y)
 
-	conv5 = create_conv_layer(512,(3,3),'relu','same',pool4,0.3)
-	pool5 = maxpooling_fn(conv5)
 
-	up6 = concatenate_fn(256,(2,2),(2,2),'same',conv5,conv4)
-	conv6 = create_conv_layer(256,(3,3),'relu','same',up6,0.3)
+def load_file_for_test_case(test_filename,description,tokenizer,max_length,vocab_size):
 
-	up7 = concatenate_fn(128,(2,2),(2,2),'same',conv6,conv3)
-	conv7 = create_conv_layer(128,(3,3),'relu','same',up7,0.3)
+	test = load_dataset(test_filename) #train the file
+	print(" The length of the train dataset:{len}".format(len=len(test)))
 
-	conv10 = Conv2D(1,(1,1),activation='sigmoid')(conv7)
+	test_descriptions = load_description(description,test)
+	print(" Descriptions:{desc_len}".format(desc_len=len(test_descriptions)))
 
-	model = Model(inputs=[inputs],outputs=[conv10])
+	#photo features
+	test_features = load_photo_features('features.pkl',test)
+	print(" Photo features:{feat_len}".format(feat_len = len(test_features)))
 
-	model.compile(optimizer=Adam(lr=0.00001),loss=dice_coef_loss,metrics=[dice_coef])
+	X1test,X2test,ytest = create_sequences(tokenizer,max_length,test_descriptions,test_features,vocab_size)
+
+	return X1test,X2test,ytest
+
+def define_model(vocab_size,max_length):
+	#feature extractor model
+	inputs_1 = Input(shape=(4096,))
+	fe_1  = Dropout(0.5)(inputs_1)
+	fe_2 = Dense(256,activation='relu')(fe_1)
+
+	#sequence model
+	inputs_2 = Input(shape=(max_length,))
+	se_1 = Embedding(vocab_size,256,mask_zero=True)(inputs_2)
+	se_2 = Dropout(0.5)(se_1)
+	se_3 = LSTM(256)(se_2)
+
+	#decoder model
+	decoder_1 = add([fe_2,se_3])
+	decoder_2 = Dense(256,activation='relu')(decoder_1)
+	outputs = Dense(vocab_size,activation='softmax')(decoder_2)
+
+	#tie it together
+	model = Model(inputs=[inputs_1,inputs_2],outputs=outputs)
+	model.compile(loss='categorical_crossentropy',optimizer='adam')
+
+	#summarize the model
+	print("Model summary")
+	print("---------------------------------")
+	print(model.summary())
+	#plot_model(model,to_file='model.png',show_shapes=True)
 
 	return model
-	
 
 def main():
-	#load necessary files
-	train_data = np.load('train.npy')
-	mask_train_data = np.load('train_mask.npy')
-	test_data = np.load('test.npy')
+	#train dataset
+	train_filename = 'Flickr8k_text/Flickr_8k.trainImages.txt'
+	test_filename = 'Flickr8k_text/Flickr_8k.testImages.txt'
 
-	#load inputs
-	training_inputs = train_data[:-1500]
-	test_training_inputs = train_data[-1500:]
-	#mask inputs
-	training_mask_inputs = mask_train_data[:-1500]
-	test_training_mask_inputs = mask_train_data[-1500:]
+	train = load_dataset(train_filename) #train the file
+	print(" The length of the train dataset:{len}".format(len=len(train)))
 
-	#mean,std 
-	training_inputs_only = training_inputs[:,0]
-	mean = np.mean(training_inputs_only)
-	std = np.std(training_inputs_only)
+	train_descriptions = load_description('descriptions.txt',train)
+	print(" Descriptions:{desc_len}".format(desc_len=len(train_descriptions)))
 
-	#test_mean,test_std
-	test_inputs_only = test_training_inputs[:,0]
-	test_mean = np.mean(test_inputs_only)
-	test_std = np.std(test_inputs_only)
+	#photo features
+	train_features = load_photo_features('features.pkl',train)
+	print(" Photo features:{feat_len}".format(feat_len = len(train_features)))
 
-	#normalizing
-	training_inputs_only = np.asarray([data-mean for num,data in enumerate(training_inputs_only)]) #(4135,50,50)
-	training_inputs_only = np.asarray([data/std for num,data in enumerate(training_inputs_only)]) #(4135,50,50) type:numpy.ndarray
+	#tokenizer
+	tokenizer = prepare_tokenizer(train_descriptions,train)
+	vocab_size = len(tokenizer.word_index) + 1
+	print(" Vocabulary Size:{size}".format(size = vocab_size))
 
-	#test normalizing
-	test_inputs_only = np.asarray([data-test_mean for num,data in enumerate(test_inputs_only)])
-	test_inputs_only = np.asarray([data/test_std for num,data in enumerate(test_inputs_only)])
+	#determine the maximum sequence length
+	max_length = find_maximum_length(train_descriptions)
+	print("Description Length:{}".format(max_length))
 
-	#normalizing train inputs
-	training_mask_inputs_only = training_mask_inputs[:,0]
-	training_mask_inputs_only /= 255 #scale masks to (0,1) type numpy.ndarray
+	#prepare sequences
+	x1train,x2train,ytrain = create_sequences(tokenizer,max_length,train_descriptions,train_features,vocab_size)
 
-	#normalizing test inputs
-	test_training_mask_inputs_only = test_training_mask_inputs[:,0]
-	test_training_mask_inputs_only /= 255 #scale masks to (0,1) type numpy.ndarray
+	#load test_dataset
+	print()
+	print("*************************************************")
+	print(" Now Preparing dataset for Test Features ")
+	x1_test,x2_test,y_test = load_file_for_test_case(test_filename,'descriptions.txt',tokenizer,max_length,vocab_size)
 
+	#fit model
+	model = define_model(vocab_size,max_length)
 
-	#reshape the data 
-	X = np.array([i for i in training_inputs_only]).reshape(-1,img_row,img_col,1) #(-1,50,50,1)
-	X_test = np.array([i for i in test_inputs_only]).reshape(-1,img_row,img_col,1) #(-1,50,50,1)
+	#define call checkpoint
+	filepath = 'model-ep-{epoch:03d}-loss{loss:.3f}-val_loss{val_loss:.3f}.h5'
+	checkpoint = ModelCheckpoint(filepath,monitor='val_loss',verbose=1,save_best_only=True,mode='min')
 
-	print('-'*30)
-	print("Creating and Compiling Model Inputs")
-	print('-'*30)
-
-	model = getNetwork()
-
-	#print(model.summary())
-
-	model_checkpoint = ModelCheckpoint("weights_best.h5",monitor='val_loss',save_best_only = True,verbose=1)
-
-	print('-'*30)
-	print("Fitting The Model..")
-	print('-'*30)
-
-	history = model.fit(X,training_mask_inputs_only,batch_size=128,epochs=40,verbose=0,shuffle=True,callbacks = [model_checkpoint],validation_data=(X_test,test_training_mask_inputs_only))
-
-	print('-'*30)
-
-	print(history.history.keys())
-
-	plt.plot(history.history['dice_coef'])
-	plt.plot(history.history['val_dice_coef'])
-	plt.title("Model Dice coefficient")
-	plt.ylabel('Dice coefficient')
-	plt.xlabel('Epochs')
-
-	plt.legend(['train','validation'],loc='upper left')
-	plt.savefig('model_accuracy.png',bbox_inches='tight')
-
-	return
-
+	#fit the model
+	model.fit([x1train,x2train],ytrain,epochs=20,verbose=2,callbacks=[checkpoint],validation_data=([x1_test,x2_test],y_test))
 
 if __name__ == '__main__':
 	main()
+
