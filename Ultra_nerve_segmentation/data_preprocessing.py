@@ -12,7 +12,7 @@ from sklearn.model_selection import train_test_split
 from random import shuffle
 from tqdm import tqdm
 
-img_size = 50
+img_size = 96
 
 def create_label(image_name):
 
