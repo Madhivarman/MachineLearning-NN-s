@@ -20,3 +20,5 @@ To run this project download the dataset and clone this git repository.
 > python data_preprocessing.py
 
 Run the above file  to convert the images into trainable format. If you want to skip this file, I've uploaded **.npy** files. You can directly run **train.py** file for training. 
+
+> python train.py
