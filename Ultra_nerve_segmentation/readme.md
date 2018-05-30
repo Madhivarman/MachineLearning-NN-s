@@ -24,3 +24,7 @@ Run the above file  to convert the images into trainable format.
 To train a network run the  **train.py** file
 
 > python train.py
+
+And our testing of our model is
+
+![alt text](https://github.com/Madhivarman/MachineLearning-NN-s/blob/master/Ultra_nerve_segmentation/model_accuracy.png)
