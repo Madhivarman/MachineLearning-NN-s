@@ -28,7 +28,7 @@ def convert_data_into_numpy_array(file_path,data_to_convert):
 		label = create_label(images)
 		#read the image
 		img = cv2.imread(full_image_path,cv2.IMREAD_GRAYSCALE)
-		img = cv2.resize(img,(img_size,img_size))
+		img = cv2.resize(img,(img_size,img_size), interpolation = cv2.INTER_NEAREST)
 
 		data_as_list.append([np.array(img),np.array(label)])
 
@@ -40,7 +40,7 @@ def convert_data_into_numpy_array(file_path,data_to_convert):
 def read_image(image):
 
 	img = cv2.imread(image,cv2.IMREAD_GRAYSCALE)
-	img = cv2.resize(img,(img_size,img_size))
+	img = cv2.resize(img,(img_size,img_size), interpolation = cv2.INTER_NEAREST)
 
 	return img
 
