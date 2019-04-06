@@ -41,8 +41,6 @@ class Data():
 			feature, label = next(batch_data)
 			final_array[0].append(feature)
 			final_array[1].append(label)
-
-		print("Data is Batched....")
 		
 
 def main():
