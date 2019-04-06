@@ -5,32 +5,45 @@ class Data():
 	"""Initial Declaration"""
 	def __init__(self, dumpname):
 		self.d = np.load(dumpname)
-		self.batch_size = None
+		self.batch_size = 8
 		self.n_samples = None
+		self.n_batches = None
 		self.batch_start, self.batch_ends = 0, self.batch_size
 
-	def get_data_as_batch(self, batch_size, total_batches):
 
-		#print(self.batch_size, self.batch_start, self.batch_ends)
-
-		for b in range(total_batches):
-			data = self.d[self.batch_start: self.batch_ends]
+	def return_fn(self):
+		for r in range(self.n_batches):
+			data = self.d[0][self.batch_start: self.batch_ends]
+			label =  self.d[1][self.batch_start: self.batch_ends]
 			self.batch_start = self.batch_ends
-			self.batch_ends += self.batch_start
-			yield data
+			self.batch_ends += self.batch_size
+			yield data, label
 
-	def data_as_batch(self, batch_size):
+	def data_as_batch(self, size, batch_name):
+
 		assert len(self.d[0]) == len(self.d[1]), "Length of Input and Label records should be same!"
 		self.n_samples = len(self.d[0])
-		self.batch_size = batch_size
 
 		#find total number of batches
 		total_batches = int(self.n_samples/self.batch_size)
+		self.n_batches = total_batches #setting total batches to the class object
 
-		#custom functions to yield batches
-		batch_data = self.get_data_as_batch(batch_size, total_batches)
-		print(next(batch_data))
+		batch_data = self.return_fn()
 
+		n_percent_data = int(self.n_samples * (size / 100))
+		n_percent_batch = int(n_percent_data / self.batch_size)
+
+		print("Number of Records in {n} Set: {rn}".format(n=batch_name, rn=n_percent_data))
+
+		final_array = [], []
+
+		for nb in range(n_percent_batch):
+			feature, label = next(batch_data)
+			final_array[0].append(feature)
+			final_array[1].append(label)
+
+		print("Data is Batched....")
+		
 
 def main():
 	#check if numpy records were in the directory
@@ -39,8 +52,7 @@ def main():
 		#carry the network architecture
 		print("Numpy data for input records is Found!!!")
 		data = Data(records)
-		batch_size = 8
-		data.data_as_batch(batch_size)
+		training = data.data_as_batch(90, "TRAIN")
 		
 	else:
 		print("There is no numpy records files found in the present directory")
