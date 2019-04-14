@@ -7,7 +7,7 @@ class VAE():
 		network_architecture, 
 		transfer_fun = tf.nn.softplus,
 		learning_rate=0.001, 
-		batch_size=16
+		batch_size=None
 	):
 
 		self.network_architecture = network_architecture
