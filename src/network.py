@@ -1,4 +1,5 @@
 import tensorflow as tf 
+import numpy as np
 
 class VAE():
 
@@ -65,7 +66,7 @@ class VAE():
 		eps = tf.random_normal((self.batch_size, n_z), 0, 1, dtype=tf.float32)
 
 		#z = mu + sigma * epsilon
-		self.z = tf.add(self.z_mean, tf.mul(tf.sqrt(tf.exp(self.z_sigma)), eps))
+		self.z = tf.add(self.z_mean, tf.matmul(tf.sqrt(tf.exp(self.z_sigma)), eps))
 
 		#here generator network is a decoder
 		#where uses sample mean, sample std from encoder to a latent space
@@ -79,7 +80,7 @@ class VAE():
 
 
 
-	def _initialize_weights(
+	def __initialize_weights(
 		    self,
 		    n_hidden_recog_1,
 		    n_hidden_recog_2,
@@ -91,11 +92,11 @@ class VAE():
 
 	    all_weights = dict()
 	    all_weights['weights_encoder'] = {
-	        'h1': tf.Variable(xavier_init(n_input, n_hidden_recog_1)),
-	        'h2': tf.Variable(xavier_init(n_hidden_recog_1,
+	        'h1': tf.Variable(self.xavier_init(n_input, n_hidden_recog_1)),
+	        'h2': tf.Variable(self.xavier_init(n_hidden_recog_1,
 	                          n_hidden_recog_2)),
-	        'out_mean': tf.Variable(xavier_init(n_hidden_recog_2, n_z)),
-	        'out_log_sigma': tf.Variable(xavier_init(n_hidden_recog_2,
+	        'out_mean': tf.Variable(self.xavier_init(n_hidden_recog_2, n_z)),
+	        'out_log_sigma': tf.Variable(self.xavier_init(n_hidden_recog_2,
 	                n_z)),
 	        }
 	    all_weights['biases_encoder'] = {
@@ -108,12 +109,12 @@ class VAE():
 	                dtype=tf.float32)),
 	        }
 	    all_weights['weights_decoder'] = {
-	        'h1': tf.Variable(xavier_init(n_z, n_hidden_gener_1)),
-	        'h2': tf.Variable(xavier_init(n_hidden_gener_1,
+	        'h1': tf.Variable(self.xavier_init(n_z, n_hidden_gener_1)),
+	        'h2': tf.Variable(self.xavier_init(n_hidden_gener_1,
 	                          n_hidden_gener_2)),
-	        'out_mean': tf.Variable(xavier_init(n_hidden_gener_2,
+	        'out_mean': tf.Variable(self.xavier_init(n_hidden_gener_2,
 	                                n_input)),
-	        'out_log_sigma': tf.Variable(xavier_init(n_hidden_gener_2,
+	        'out_log_sigma': tf.Variable(self.xavier_init(n_hidden_gener_2,
 	                n_input)),
 	        }
 	    all_weights['biases_decoder'] = {
@@ -139,8 +140,8 @@ class VAE():
 		biases
 	):
 
-		layer_1 = self.transfer_fun(tf.add(tf.matmul(self.x, weights['h1']),biases['h1']))
-		layer_2 = self.transfer_fun(tf.add(tf.matmul(layer_1, weights['h2']), biases['h2']))
+		layer_1 = self.transfer_fun(tf.add(tf.matmul(self.x, weights['h1']),biases['b1']))
+		layer_2 = self.transfer_fun(tf.add(tf.matmul(layer_1, weights['h2']), biases['b2']))
 		z_mean = tf.add(tf.matmul(layer_2, weights['out_mean']), biases['out_mean'])
 		z_std = tf.add(tf.matmul(layer_2, weights['out_log_sigma']), biases['out_log_sigma'])
 

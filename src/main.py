@@ -1,6 +1,7 @@
 import os
 import numpy as np
 from network import VAE
+import matplotlib.pyplot as plt
 
 class Data():
 	"""Initial Declaration"""
@@ -20,10 +21,11 @@ class Data():
 			self.batch_ends += self.batch_size
 			yield data, label
 
-	def data_as_batch(self, size, batch_name):
+	def data_as_batch(self, size, batch_name, data=None):
 
-		assert len(self.d[0]) == len(self.d[1]), "Length of Input and Label records should be same!"
-		self.n_samples = len(self.d[0])
+		#assert len(self.d[0]) == len(self.d[1]), "Length of Input and Label records should be same!"
+		#self.n_samples = len(self.d[0])
+		self.n_samples = len(data[0])
 
 		#find total number of batches
 		total_batches = int(self.n_samples/self.batch_size)
@@ -88,8 +90,15 @@ def main():
 		#check if data are correctly batched
 		#no repeatable features
 		#<!--Batch data is working correctly-->
-		training_set = data.data_as_batch(90, "TRAIN") #Shape: [[features], [labels]]
+		training_set = data.data_as_batch(90, "TRAIN", data.d) #Shape: [[features], [labels]]
 		print("Length of the Training set for FEATURES={}, LABELS={}".format(len(training_set[0]), len(training_set[1])))
+
+		#testing set
+		testing_set = [data.d[0][data.batch_ends: ], data.d[1][data.batch_ends: ]]
+		print("Number of records in Test Set: FEATURES={}, LABELS={}".format(len(testing_set[0]), len(testing_set[1])))
+
+		#test data as batch
+		testing_set = data.data_as_batch(100, "TEST", testing_set) #shape: [[features], [labels]]
 
 		#iterate through the training set and start training the network
 		network_architecture = dict(
@@ -97,11 +106,38 @@ def main():
 			n_hidden_recog_2 = 500, #2nd layer encoder neurons
 			n_hidden_gener_1 = 500, #1st layer decoder neurons
 			n_hidden_gener_2 = 500, #2nd layer decoder neurons
-			n_input=len(training_set[0][0][0]), #input image Size
+			n_input=len(training_set[0][0][0]), #input image Size ie.., 784(24x24)
 			n_z=20 #dimensionality of latent space
 		)
 
 		vae = train(network_architecture, training_set)
+
+		#get the first batch data of test set
+		test_x_sample = testing_set[0][0]
+
+		test_reconstruct = vae.reconstruct(test_x_sample)
+
+		plt.figure(figsize=(8, 12))
+
+		for i in range(8):
+			plt.subplot(8, 2, 2*i+1)
+			plt.imshow(test_x_sample[i].reshape(28, 28), vmin=0, vmax=1, cmap='gray')
+			plt.title("Test Input")
+			plt.colorbar()
+			plt.subplots(5, 2, 2*i+2)
+			plt.imshow(test_reconstruct[i].reshape(28, 28), vmin=0, vmax=1, cmap='gray')
+			plt.title("Reconstruction")
+			plt.colorbar()
+
+		plt.tight_layout()
+
+
+		#store the class weights as a Pickle Dump
+		import pickle
+		with open("vae.pickle","w") as input:
+			pickle.dump(vae, input, pickle.HIGHEST_PROTOCOL)
+
+
 		
 	else:
 		print("There is no numpy records files found in the present directory")
