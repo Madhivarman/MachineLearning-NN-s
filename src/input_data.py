@@ -37,12 +37,15 @@ class ReadDataset():
                 full_path = dirpath + "/" + img
                 #open an image
                 image_read = Image.open(full_path).convert('LA')
+
                 #resize
-                image_read = image_read.resize((self.imgsize, self.imgsize))
+                image_read = image_read.resize((self.imgsize, self.imgsize), Image.ANTIALIAS)
                 #convert into numpy array
-                pix = np.array(image_read) #[32, 32]
+                pix = np.array(image_read) #[28, 28]
+                pix = pix[:,:,0]
+
                 #convert into records
-                pix = np.reshape(pix, (np.product(pix.shape),))
+                pix = np.reshape(pix, (np.product(self.imgsize * self.imgsize)))
 
                 #store it into dump
                 if one_hot:
@@ -70,7 +73,7 @@ class ReadDataset():
 
 rd = ReadDataset()
 
-image_path = "D:/practise/VAE/dogs-vs-cats/datasets/train"
+image_path = "../../dataset/train"
 
 #finding total number of labels
 total_labels = rd.findTotalCategories(image_path)
