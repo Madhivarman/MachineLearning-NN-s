@@ -42,7 +42,7 @@ class ReadDataset():
                 image_read = image_read.resize((self.imgsize, self.imgsize), Image.ANTIALIAS)
                 #convert into numpy array
                 pix = np.array(image_read) #[28, 28]
-                pix = pix[:,:,0]
+                pix = pix[:,:,0] #get only image data(from first layer of matrix), ignore the next layer(plain card)
 
                 #convert into records
                 pix = np.reshape(pix, (np.product(self.imgsize * self.imgsize)))
