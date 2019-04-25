@@ -12,3 +12,7 @@ Using VAE Neural Networks to do linear interpolations from one image to another 
 
 ## Explanation
 To Know about VAE, highly recommended to read the original paper and going through this link helps to understand the whole structure [Variational AutoEncoders Overview](http://kvfrans.com/variational-autoencoders-explained/)
+
+## Citations 
+
+Thanks to the author of this article [Blog Post](https://jmetzen.github.io/2015-11-27/vae.html)
