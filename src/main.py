@@ -15,8 +15,8 @@ class Data():
 
 	def return_fn(self):
 		for r in range(self.n_batches):
-			data = self.d[0][self.batch_start: self.batch_ends]
-			label =  self.d[1][self.batch_start: self.batch_ends]
+			data = np.array(self.d[0][self.batch_start: self.batch_ends])
+			label =  np.array(self.d[1][self.batch_start: self.batch_ends])
 			self.batch_start = self.batch_ends
 			self.batch_ends += self.batch_size
 			yield data, label
@@ -52,32 +52,35 @@ class Data():
 
 
 
-def train(network_architecture, training_data, lr=0.001, 
-	batch_size=8, training_epochs=75, display_step=5):
+def train(network_architecture, training_data, data, lr=0.001, 
+	batch_size=8, training_epochs=75, display_step=10):
+
+	print("-" * 15)
+	print("Network Training is Started..")
 
 	vae = VAE(network_architecture, learning_rate=lr, batch_size=8)
 	#start the network learning
 	#training cycle
+
 	for epochs in range(training_epochs):
-		avg_cost = 0
+			avg_cost = 0
 
-		#iterate through batch range
-		for batch_num in range(len(training_data[0])):
-			#get features and labels
-			features, labels = training_data[0][batch_num],  training_data[1][batch_num]
+			#iterate through batch range
+			for batch_num in range(len(training_data[0])):
+				#get features and labels
+				features, labels = np.stack(training_data[0][batch_num], axis=0),  np.stack(training_data[1][batch_num], axis=0)
 
-			#fit the training batch data
-			cost = vae.partial_fit(features)
+				#fit the training batch data
+				cost = vae.partial_fit(features)
 
-			#compute average loss
-			avg_cost += cost / Data.n_samples * batch_size
+				#compute average loss
+				avg_cost += cost / data.n_samples * batch_size
 
 			#display logs per epoch and steps
 			if epochs % display_step == 0:
 				print("Epochs:{}, cost={}".format(epochs+1, avg_cost))
 
 	return vae #returning whole class object
-
 
 def main():
 	#check if numpy records were in the directory
@@ -90,8 +93,10 @@ def main():
 		#check if data are correctly batched
 		#no repeatable features
 		#<!--Batch data is working correctly-->
-		training_set = data.data_as_batch(90, "TRAIN", data.d) #Shape: [[features], [labels]]
+		training_set = data.data_as_batch(90, "TRAIN", data.d) #Shape: [array([features]), array([labels])]
 		print("Length of the Training set for FEATURES={}, LABELS={}".format(len(training_set[0]), len(training_set[1])))
+
+		#print(np.stack(training_set[1][0], axis=0))
 
 		#testing set
 		testing_set = [data.d[0][data.batch_ends: ], data.d[1][data.batch_ends: ]]
@@ -110,10 +115,10 @@ def main():
 			n_z=20 #dimensionality of latent space
 		)
 
-		vae = train(network_architecture, training_set)
+		vae = train(network_architecture, training_set, data)
 
 		#get the first batch data of test set
-		test_x_sample = testing_set[0][0]
+		test_x_sample = np.stack(testing_set[0][0])
 
 		test_reconstruct = vae.reconstruct(test_x_sample)
 
