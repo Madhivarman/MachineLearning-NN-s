@@ -33,6 +33,15 @@ class VAE():
 		self.sess.run(init)
 
 
+	"""
+		Why Xavier_init?
+			Initializing the network with right weights is very important for neural
+			networks. Initial weights are should be in reasonable range, so while
+			traininig a network it preserves the backprop signals and prevent the 
+			network from vanishing gradients. 
+
+			Xavier Initialization follows Gaussian Distribution
+	"""
 
 	def xavier_init(
 		self, 
@@ -66,7 +75,7 @@ class VAE():
 		eps = tf.random_normal((self.batch_size, n_z), 0, 1, dtype=tf.float32)
 
 		#z = mu + sigma * epsilon
-		self.z = tf.add(self.z_mean, tf.matmul(tf.sqrt(tf.exp(self.z_sigma)), eps))
+		self.z = tf.add(self.z_mean, tf.multiply(tf.sqrt(tf.exp(self.z_sigma)), eps))
 
 		#here generator network is a decoder
 		#where uses sample mean, sample std from encoder to a latent space
@@ -91,6 +100,9 @@ class VAE():
     ):
 
 	    all_weights = dict()
+
+	    #encoder network
+	    #encoder - Weights
 	    all_weights['weights_encoder'] = {
 	        'h1': tf.Variable(self.xavier_init(n_input, n_hidden_recog_1)),
 	        'h2': tf.Variable(self.xavier_init(n_hidden_recog_1,
@@ -99,6 +111,8 @@ class VAE():
 	        'out_log_sigma': tf.Variable(self.xavier_init(n_hidden_recog_2,
 	                n_z)),
 	        }
+
+	    #encoder - biases
 	    all_weights['biases_encoder'] = {
 	        'b1': tf.Variable(tf.zeros([n_hidden_recog_1],
 	                          dtype=tf.float32)),
@@ -108,6 +122,10 @@ class VAE():
 	        'out_log_sigma': tf.Variable(tf.zeros([n_z],
 	                dtype=tf.float32)),
 	        }
+
+
+	    #decoder network
+	    #decoder - Weights
 	    all_weights['weights_decoder'] = {
 	        'h1': tf.Variable(self.xavier_init(n_z, n_hidden_gener_1)),
 	        'h2': tf.Variable(self.xavier_init(n_hidden_gener_1,
@@ -117,6 +135,8 @@ class VAE():
 	        'out_log_sigma': tf.Variable(self.xavier_init(n_hidden_gener_2,
 	                n_input)),
 	        }
+
+	    #decoder-biases
 	    all_weights['biases_decoder'] = {
 	        'b1': tf.Variable(tf.zeros([n_hidden_gener_1],
 	                          dtype=tf.float32)),
@@ -164,7 +184,7 @@ class VAE():
 
 		layer_1 = self.transfer_fun(tf.add(tf.matmul(self.z, weights['h1']), biases['b1']))
 		layer_2 = self.transfer_fun(tf.add(tf.matmul(layer_1, weights['h2']), biases['b2']))
-		x_reconstr_mean = tf.nn.sigmoid(tf.add(tf.matmul(layer_2, weights['out_mean'], biases['out_mean'])))
+		x_reconstr_mean = tf.nn.sigmoid(tf.add(tf.matmul(layer_2, weights['out_mean']),biases['out_mean']))
 
 		return x_reconstr_mean
 
