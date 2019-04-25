@@ -53,7 +53,7 @@ class Data():
 
 
 def train(network_architecture, training_data, data, lr=0.001, 
-	batch_size=8, training_epochs=75, display_step=10):
+	batch_size=8, training_epochs=1000, display_step=10):
 
 	print("-" * 15)
 	print("Network Training is Started..")
@@ -129,7 +129,7 @@ def main():
 			plt.imshow(test_x_sample[i].reshape(28, 28), vmin=0, vmax=1, cmap='gray')
 			plt.title("Test Input")
 			plt.colorbar()
-			plt.subplots(5, 2, 2*i+2)
+			plt.subplot(8, 2, 2*i+2)
 			plt.imshow(test_reconstruct[i].reshape(28, 28), vmin=0, vmax=1, cmap='gray')
 			plt.title("Reconstruction")
 			plt.colorbar()
