@@ -1,0 +1,30 @@
+{
+	"weights_encoder":
+	 	{
+			"h2": "<tf.Variable 'Variable_1:0' shape=(500, 500) dtype=float32_ref>", 
+			"out_mean": "<tf.Variable 'Variable_2:0' shape=(500, 20) dtype=float32_ref>",
+			"out_log_sigma": "<tf.Variable 'Variable_3:0' shape=(500, 20) dtype=float32_ref>", 
+			"h1": "<tf.Variable 'Variable:0' shape=(784, 500) dtype=float32_ref>"
+		}, 
+	"weights_decoder": 
+		{
+			"h2":"<tf.Variable 'Variable_9:0' shape=(500, 500) dtype=float32_ref>", 
+			"out_mean":"<tf.Variable 'Variable_10:0' shape=(500, 784) dtype=float32_ref>", 
+			"out_log_sigma":" <tf.Variable 'Variable_11:0' shape=(500, 784) dtype=float32_ref>", 
+			"h1": "<tf.Variable 'Variable_8:0' shape=(20, 500) dtype=float32_ref>"
+		}, 
+	"biases_decoder": 
+		{
+			"out_mean": "<tf.Variable 'Variable_14:0' shape=(784,) dtype=float32_ref>", 
+			"b2": "<tf.Variable 'Variable_13:0' shape=(500,) dtype=float32_ref>", 
+			"b1": "<tf.Variable 'Variable_12:0' shape=(500,) dtype=float32_ref>", 
+			"out_log_sigma": "<tf.Variable 'Variable_15:0' shape=(784,) dtype=float32_ref>"
+		},
+	"biases_encoder": 
+		{
+			"out_mean": "<tf.Variable 'Variable_6:0' shape=(20,) dtype=float32_ref>", 
+			"b2": "<tf.Variable 'Variable_5:0' shape=(500,) dtype=float32_ref>", 
+			"b1": "<tf.Variable 'Variable_4:0' shape=(500,) dtype=float32_ref>", 
+			"out_log_sigma": "<tf.Variable 'Variable_7:0' shape=(20,) dtype=float32_ref>"
+		}
+}
