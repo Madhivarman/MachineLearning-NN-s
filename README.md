@@ -9,6 +9,8 @@ Using VAE Neural Networks to do linear interpolations from one image to another 
 `network.py` - VAE Architecture is defined. 
 </br>
 `main.py` - To train a network
+</br>
+`reference` -  Folder contains *json* file describes the network architecture, its type and image describes how the network performs on test data.
 
 ## Explanation
 To Know about VAE, highly recommended to read the original paper and going through this link helps to understand the whole structure [Variational AutoEncoders Overview](http://kvfrans.com/variational-autoencoders-explained/)
