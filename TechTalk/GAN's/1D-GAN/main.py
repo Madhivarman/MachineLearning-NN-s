@@ -18,8 +18,7 @@ def generate_random_sample(n=1000):
 	return np.hstack((X1, X2))
 
 
-#helper function helps us to create a label
-#class
+#helper function helps us to create a label class
 def generate_real_sample(n):
 	#generate inputs between -2 and 2
 	X1 = np.random.randn(n)-0.5
@@ -33,6 +32,8 @@ def generate_real_sample(n):
 
 	return X, y
 
+
+#function to plot the raw data
 def plot_raw_data(data, filename):
 	plt.scatter(data[:, 0], data[:, 1])
 	plt.savefig(filename)
@@ -99,6 +100,7 @@ def GAN(generator, discriminator):
 	return model
 
 def summarize_performance(epochs, generator, discriminator, latent_dim,n=100):
+	#figure size
 	plt.figure(figsize=(20, 10))
 	#prepare real samples
 	x_real, y_real = generate_real_sample(n)
@@ -108,7 +110,8 @@ def summarize_performance(epochs, generator, discriminator, latent_dim,n=100):
 	x_fake, y_fake = generate_fake_samples(generator, latent_dim, n)
 	#evaluate discriminator on fake samples
 	dis_fake_loss, acc_fake = discriminator.evaluate(x_fake, y_fake, verbose=0)
-
+	
+	#writing logs in txt file
 	with open("logs.txt", "a") as fp:
 		fp.write("steps:{}, real loss:{}, fake_loss:{}".format(epochs, dis_real_loss, dis_fake_loss))
 		fp.write("\n")
@@ -128,7 +131,7 @@ def summarize_performance(epochs, generator, discriminator, latent_dim,n=100):
 	plt.savefig("imagesGenerated/epochs_{}.jpg".format(epochs))
 	#plt.show()
 
-
+#function to start a training
 def train(g_model, d_model, gan_model, latent_dim,
 			 n_epochs=2000,n_batches=128, n_eval=100):
 	
@@ -136,7 +139,7 @@ def train(g_model, d_model, gan_model, latent_dim,
 
 	#iterate through epochs
 	for i in range(n_epochs):
-		#prepare real samples
+		#real samples
 		x_real, y_real = generate_real_sample(half_batch)
 		x_fake, y_fake = generate_fake_samples(g_model, latent_dim, half_batch)
 
@@ -153,6 +156,7 @@ def train(g_model, d_model, gan_model, latent_dim,
 
 		#evaluate the model
 		if (i+1) % n_eval == 0:
+			#function to summarize the performance
 			summarize_performance(i, g_model, d_model, latent_dim)
 
 
@@ -161,7 +165,7 @@ def main():
 	data = generate_random_sample()
 	latent_dim = 5
 
-	#defining a networks
+	#defining a network
 	D = discriminator()
 	G = generator(latent_dim)
 	gan = GAN(G, D)
